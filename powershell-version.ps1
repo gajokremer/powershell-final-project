@@ -7,8 +7,83 @@ Write-Output "Servidor iniciado en http://localhost:8080/"
 
 # Function to generate HTML table with process information
 function Get-ProcessTableHtml {
-    $html = "<html><body><h2>Monitoreo de Procesos</h2><form method='POST' action='/kill'>"
-    $html += "<table border='1'><tr><th>Seleccionar</th><th>ID</th><th>Nombre</th><th>Uso de CPU (%)</th><th>Memoria (MB)</th></tr>"
+    $html = @"
+<html>
+<head>
+    <title>Monitoreo de Procesos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            text-align: center;
+            margin: 20px 0;
+        }
+        form {
+            width: 90%;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        input[type='radio'] {
+            margin: auto;
+            display: block;
+        }
+        input[type='submit'] {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type='submit']:hover {
+            background-color: #0056b3;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Monitoreo de Procesos</h2>
+    <form method="POST" action="/kill">
+        <table>
+            <tr>
+                <th>Seleccionar</th>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Uso de CPU (%)</th>
+                <th>Memoria (MB)</th>
+            </tr>
+"@
 
     # List processes with CPU and memory info
     Get-Process | ForEach-Object {
@@ -21,7 +96,14 @@ function Get-ProcessTableHtml {
         $html += "<tr><td><input type='radio' name='processId' value='$id'/></td><td>$id</td><td>$name</td><td>$cpu</td><td>$memory</td></tr>"
     }
     
-    $html += "</table><br><input type='submit' value='Terminar Proceso'/></form></body></html>"
+    $html += @"
+        </table>
+        <input type="submit" value="Terminar Proceso"/>
+    </form>
+</body>
+</html>
+"@
+
     return $html
 }
 
@@ -51,9 +133,25 @@ while ($listener.IsListening) {
         try {
             # Use taskkill for compatibility
             Start-Process "taskkill" -ArgumentList "/PID $processId /F" -NoNewWindow -Wait
-            $message = "<html><body><h2>Proceso $processId terminado correctamente.</h2><a href='/'>Volver a la lista de procesos</a></body></html>"
+            $message = @"
+<html>
+<head><title>Proceso Terminado</title></head>
+<body>
+    <h2>Proceso $processId terminado correctamente.</h2>
+    <a href="/">Volver a la lista de procesos</a>
+</body>
+</html>
+"@
         } catch {
-            $message = "<html><body><h2>Error al terminar el proceso $processId. Asegúrate de que tienes los permisos necesarios.</h2><a href='/'>Volver a la lista de procesos</a></body></html>"
+            $message = @"
+<html>
+<head><title>Error</title></head>
+<body>
+    <h2>Error al terminar el proceso $processId. Asegúrate de que tienes los permisos necesarios.</h2>
+    <a href="/">Volver a la lista de procesos</a>
+</body>
+</html>
+"@
         }
         
         $buffer = [System.Text.Encoding]::UTF8.GetBytes($message)
